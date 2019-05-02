@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">TextRecognizer</string>
+    <string name="gallery_image_text">Gallery Image</string>
+    <string name="MSER">MSER</string>
+    <string name="SWT">SWT</string>
+</resources>
