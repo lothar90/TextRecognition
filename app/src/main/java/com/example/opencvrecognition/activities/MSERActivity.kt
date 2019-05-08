@@ -3,7 +3,6 @@ package com.example.opencvrecognition.activities
 import android.app.Activity
 import android.content.Intent
 import android.graphics.Bitmap
-import android.graphics.drawable.BitmapDrawable
 import android.os.Bundle
 import android.provider.MediaStore
 import android.support.design.widget.NavigationView
@@ -48,12 +47,19 @@ class MSERActivity : BaseActivity() {
             // close drawer when item is tapped
             drawerLayout.closeDrawers()
 
-            if (menuItem.itemId == R.id.mser_activity) {
-                val intent = Intent(this, MSERActivity::class.java)
-                startActivity(intent)
-            } else if (menuItem.itemId == R.id.swt_activity) {
-                val intent = Intent(this, SWTActivity::class.java)
-                startActivity(intent)
+            when {
+                menuItem.itemId == R.id.mser_activity -> {
+                    val intent = Intent(this, MSERActivity::class.java)
+                    startActivity(intent)
+                }
+                menuItem.itemId == R.id.swt_activity -> {
+                    val intent = Intent(this, SWTActivity::class.java)
+                    startActivity(intent)
+                }
+                menuItem.itemId == R.id.east_activity -> {
+                    val intent = Intent(this, EASTActivity::class.java)
+                    startActivity(intent)
+                }
             }
             true
         }

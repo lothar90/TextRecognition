@@ -9,5 +9,9 @@
                 android:id="@+id/swt_activity"
                 android:icon="@drawable/ic_menu_camera"
                 android:title="@string/SWT"/>
+        <item
+                android:id="@+id/east_activity"
+                android:icon="@drawable/ic_menu_camera"
+                android:title="@string/EAST"/>
     </group>
 </menu>

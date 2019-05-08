@@ -39,7 +39,6 @@ class EASTActivity : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_east)
-        System.loadLibrary(Core.NATIVE_LIBRARY_NAME)
 
         net = Dnn.readNetFromTensorflow("./additions/frozen_east_text_detection.pb")
 
@@ -51,12 +50,19 @@ class EASTActivity : BaseActivity() {
             // close drawer when item is tapped
             drawerLayout.closeDrawers()
 
-            if (menuItem.itemId == R.id.mser_activity) {
-                val intent = Intent(this, MSERActivity::class.java)
-                startActivity(intent)
-            } else if (menuItem.itemId == R.id.swt_activity) {
-                val intent = Intent(this, SWTActivity::class.java)
-                startActivity(intent)
+            when {
+                menuItem.itemId == R.id.mser_activity -> {
+                    val intent = Intent(this, MSERActivity::class.java)
+                    startActivity(intent)
+                }
+                menuItem.itemId == R.id.swt_activity -> {
+                    val intent = Intent(this, SWTActivity::class.java)
+                    startActivity(intent)
+                }
+                menuItem.itemId == R.id.east_activity -> {
+                    val intent = Intent(this, EASTActivity::class.java)
+                    startActivity(intent)
+                }
             }
             true
         }
@@ -93,7 +99,7 @@ class EASTActivity : BaseActivity() {
             Utils.bitmapToMat(bitmap, mRgba)
             Imgproc.cvtColor(mRgba, mRgba, Imgproc.COLOR_RGBA2RGB)
             val milis = System.currentTimeMillis()
-            doEAST()
+            //doEAST()
             Log.i(TAG, "Detection time:" + (System.currentTimeMillis() - milis))
             Utils.matToBitmap(mRgba, bitmap)
             galleryImageViewEAST.setImageBitmap(bitmap)
@@ -126,7 +132,7 @@ class EASTActivity : BaseActivity() {
         val boxesArray = boxesList.toArray() as Array<RotatedRect>
         val boxes = MatOfRotatedRect(*boxesArray)
         val indices = MatOfInt()
-        Dnn.NMSBoxesRotated(boxes, confidences, scoreThresh, nmsThresh, indices)
+        //Dnn.NMSBoxesRotated(boxes, confidences, scoreThresh, nmsThresh, indices)
 
         val ratio = Point(mRgba.cols().toFloat() / size.width, mRgba.rows().toFloat() / size.height)
         val indexes = indices.toArray()
@@ -144,7 +150,12 @@ class EASTActivity : BaseActivity() {
         }
     }
 
-    fun decode(scores: Mat, geometry: Mat, confidences: ArrayList<Float>, scoreThresh: Float): ArrayList<RotatedRect> {
+    fun decode(
+        scores: Mat,
+        geometry: Mat,
+        confidences: ArrayList<Float>,
+        scoreThresh: Float
+    ): ArrayList<RotatedRect> {
         val W = geometry.cols()
         val H = geometry.rows() / 5
 
