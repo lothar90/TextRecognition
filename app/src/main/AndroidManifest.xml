@@ -27,17 +27,20 @@
             android:supportsRtl="true"
             android:theme="@style/AppTheme"
             tools:ignore="GoogleAppIndexingWarning">
-        <activity
-                android:label="@string/SWT"
-                android:name=".activities.SWTActivity"
-                android:configChanges="screenLayout|orientation|screenSize">
+        <activity android:name=".activities.EASTActivity">
         </activity>
         <activity
-                android:label="@string/app_name"
+                android:name=".activities.SWTActivity"
+                android:configChanges="screenLayout|orientation|screenSize"
+                android:label="@string/SWT">
+        </activity>
+        <activity
                 android:name=".activities.MSERActivity"
-                android:configChanges="screenLayout|orientation|screenSize">
+                android:configChanges="screenLayout|orientation|screenSize"
+                android:label="@string/app_name">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
+
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>

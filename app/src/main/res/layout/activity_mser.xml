@@ -111,7 +111,8 @@
                     app:layout_constraintStart_toEndOf="@+id/mserMaskActionButton"
                     android:layout_marginStart="8dp"
                     android:focusable="true"
-                    android:onClick="onMserMorphoActionButtonClick"/>
+                    android:onClick="onMserMorphoActionButtonClick"
+            />
 
             <android.support.design.widget.FloatingActionButton
                     android:layout_width="wrap_content"
@@ -119,12 +120,12 @@
                     android:clickable="true"
                     app:srcCompat="@android:drawable/ic_input_add"
                     android:id="@+id/mserDetectedContoursActionButton"
-                    app:layout_constraintStart_toEndOf="@+id/mserMorphoActionButton"
-                    android:layout_marginStart="8dp"
                     android:layout_marginBottom="32dp"
                     app:layout_constraintBottom_toBottomOf="parent"
                     android:focusable="true"
-                    android:onClick="onMserDetectedContoursActionButtonClick"/>
+                    android:onClick="onMserDetectedContoursActionButtonClick"
+                    app:layout_constraintStart_toEndOf="@+id/mserMorphoActionButton"
+                    android:layout_marginStart="8dp"/>
 
         </android.support.constraint.ConstraintLayout>
 

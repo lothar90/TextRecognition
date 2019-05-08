@@ -6,7 +6,6 @@ import org.opencv.android.Utils
 import org.opencv.core.*
 import org.opencv.features2d.MSER
 import org.opencv.imgproc.Imgproc
-import org.opencv.core.MatOfPoint
 
 
 class MSEROperations {
@@ -45,11 +44,11 @@ class MSEROperations {
         milis = System.currentTimeMillis()
         val rectangles = boundingBoxes.toList()
         for (i in 0 until rectangles.size) {
-            var width = rectangles[i].width
-            var height = rectangles[i].height
+            val width = rectangles[i].width
+            val height = rectangles[i].height
             aspectRatio = width.toDouble() / height.toDouble()
             extent = listOfRegions[i].toArray().size.toDouble() / (width * height)
-            if(aspectRatio > 0.6 && aspectRatio < 2 && extent > 0.3 && extent < 0.9)
+            if (aspectRatio > 0.3 && aspectRatio < 2 && extent > 0.3 && extent < 0.9)
                 Imgproc.rectangle(mRgba, rectangles[i].br(), rectangles[i].tl(), CONTOUR_COLOR, 2)
         }
         Log.i(TAG, "Masking time:" + (System.currentTimeMillis() - milis))
@@ -81,8 +80,14 @@ class MSEROperations {
         milis = System.currentTimeMillis()
         val rectangles = boundingBoxes.toList()
         for (i in 0 until rectangles.size) {
-            val roi = Mat(mask, rectangles[i])
-            roi.setTo(CONTOUR_COLOR)
+            val width = rectangles[i].width
+            val height = rectangles[i].height
+            aspectRatio = width.toDouble() / height.toDouble()
+            extent = listOfRegions[i].toArray().size.toDouble() / (width * height)
+            if (aspectRatio > 0.3 && aspectRatio < 2 && extent > 0.3 && extent < 0.9) {
+                val roi = Mat(mask, rectangles[i])
+                roi.setTo(CONTOUR_COLOR)
+            }
         }
         Log.i(TAG, "Masking time:" + (System.currentTimeMillis() - milis))
 
@@ -113,8 +118,14 @@ class MSEROperations {
         milis = System.currentTimeMillis()
         val rectangles = boundingBoxes.toList()
         for (i in 0 until rectangles.size) {
-            val roi = Mat(mask, rectangles[i])
-            roi.setTo(CONTOUR_COLOR)
+            val width = rectangles[i].width
+            val height = rectangles[i].height
+            aspectRatio = width.toDouble() / height.toDouble()
+            extent = listOfRegions[i].toArray().size.toDouble() / (width * height)
+            if (aspectRatio > 0.3 && aspectRatio < 2 && extent > 0.3 && extent < 0.9) {
+                val roi = Mat(mask, rectangles[i])
+                roi.setTo(CONTOUR_COLOR)
+            }
         }
         Log.i(TAG, "Masking time:" + (System.currentTimeMillis() - milis))
 
@@ -123,7 +134,7 @@ class MSEROperations {
             mask,
             mask,
             Imgproc.MORPH_DILATE,
-            Imgproc.getStructuringElement(Imgproc.MORPH_RECT, Size(15.0, 5.0))
+            Imgproc.getStructuringElement(Imgproc.MORPH_RECT, Size(15.0, 1.0))
         )
         Log.i(TAG, "Morpho time:" + (System.currentTimeMillis() - milis))
 
@@ -157,8 +168,14 @@ class MSEROperations {
         milis = System.currentTimeMillis()
         val rectangles = boundingBoxes.toList()
         for (i in 0 until rectangles.size) {
-            val roi = Mat(mask, rectangles[i])
-            roi.setTo(CONTOUR_COLOR)
+            val width = rectangles[i].width
+            val height = rectangles[i].height
+            aspectRatio = width.toDouble() / height.toDouble()
+            extent = listOfRegions[i].toArray().size.toDouble() / (width * height)
+            if (aspectRatio > 0.3 && aspectRatio < 2 && extent > 0.3 && extent < 0.9) {
+                val roi = Mat(mask, rectangles[i])
+                roi.setTo(CONTOUR_COLOR)
+            }
         }
         Log.i(TAG, "Masking time:" + (System.currentTimeMillis() - milis))
 
@@ -167,7 +184,7 @@ class MSEROperations {
             mask,
             mask,
             Imgproc.MORPH_DILATE,
-            Imgproc.getStructuringElement(Imgproc.MORPH_RECT, Size(15.0, 5.0))
+            Imgproc.getStructuringElement(Imgproc.MORPH_RECT, Size(15.0, 1.0))
         )
         Log.i(TAG, "Morpho time:" + (System.currentTimeMillis() - milis))
 
@@ -213,8 +230,14 @@ class MSEROperations {
         milis = System.currentTimeMillis()
         val rectangles = boundingBoxes.toList()
         for (i in 0 until rectangles.size) {
-            val roi = Mat(mask, rectangles[i])
-            roi.setTo(CONTOUR_COLOR)
+            val width = rectangles[i].width
+            val height = rectangles[i].height
+            aspectRatio = width.toDouble() / height.toDouble()
+            extent = listOfRegions[i].toArray().size.toDouble() / (width * height)
+            if (aspectRatio > 0.3 && aspectRatio < 2 && extent > 0.3 && extent < 0.9) {
+                val roi = Mat(mask, rectangles[i])
+                roi.setTo(CONTOUR_COLOR)
+            }
         }
         Log.i(TAG, "Masking time:" + (System.currentTimeMillis() - milis))
 
@@ -223,7 +246,7 @@ class MSEROperations {
             mask,
             mask,
             Imgproc.MORPH_DILATE,
-            Imgproc.getStructuringElement(Imgproc.MORPH_RECT, Size(15.0, 5.0))
+            Imgproc.getStructuringElement(Imgproc.MORPH_RECT, Size(15.0, 1.0))
         )
         Log.i(TAG, "Morpho time:" + (System.currentTimeMillis() - milis))
 
@@ -238,7 +261,7 @@ class MSEROperations {
                 Imgproc.rectangle(mRgba, boundingBox.br(), boundingBox.tl(), CONTOUR_COLOR, 2)
                 continue
             }
-            if (boundingBox.area() > 50 && boundingBox.height / boundingBox.width > 1.5) {
+            if (boundingBox.area() > 100 && boundingBox.height / boundingBox.width > 1.5) {
                 Imgproc.rectangle(mRgba, boundingBox.br(), boundingBox.tl(), CONTOUR_COLOR, 2)
                 continue
             }

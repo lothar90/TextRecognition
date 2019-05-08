@@ -41,7 +41,8 @@
                     app:layout_constraintStart_toStartOf="parent"
                     android:contentDescription="@string/gallery_image_text"
                     app:layout_constraintHorizontal_bias="0.0"
-                    android:layout_marginTop="8dp" app:layout_constraintTop_toBottomOf="@+id/linearLayout2"/>
+                    android:layout_marginTop="8dp"
+                    app:layout_constraintTop_toBottomOf="@+id/linearLayout2"/>
 
             <android.support.design.widget.FloatingActionButton
                     android:layout_width="56dp"
@@ -75,9 +76,12 @@
                     android:orientation="horizontal"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    app:layout_constraintEnd_toEndOf="parent" android:layout_marginEnd="8dp"
-                    app:layout_constraintStart_toStartOf="parent" android:layout_marginStart="8dp"
-                    android:layout_marginTop="8dp" app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    android:layout_marginEnd="8dp"
+                    app:layout_constraintStart_toStartOf="parent"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginTop="8dp"
+                    app:layout_constraintTop_toTopOf="parent"
                     android:id="@+id/linearLayout2">
                 <TextView
                         android:text="LowThresh:"
@@ -106,6 +110,34 @@
                         android:id="@+id/highThreshValue"
                         android:layout_weight="1"/>
             </LinearLayout>
+
+            <android.support.design.widget.FloatingActionButton
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:clickable="true"
+                    app:srcCompat="@android:drawable/ic_delete"
+                    android:id="@+id/cannyEdgeActionButton"
+                    app:layout_constraintEnd_toStartOf="@+id/playActionButtonSWT"
+                    android:layout_marginEnd="8dp"
+                    android:layout_marginBottom="32dp"
+                    app:layout_constraintBottom_toBottomOf="@+id/galleryImageViewSWT"
+                    android:focusable="true"
+                    android:onClick="onCannyEdgeActionButtonClick"
+                    app:layout_constraintStart_toEndOf="@+id/grayActionButton"
+                    android:layout_marginStart="8dp"/>
+
+            <android.support.design.widget.FloatingActionButton
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:clickable="true"
+                    app:srcCompat="@android:drawable/btn_star"
+                    android:id="@+id/grayActionButton"
+                    app:layout_constraintStart_toEndOf="@+id/galleryActionButtonSWT"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginBottom="32dp"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    android:focusable="true"
+                    android:onClick="onGrayActionButtonClick"/>
 
         </android.support.constraint.ConstraintLayout>
 

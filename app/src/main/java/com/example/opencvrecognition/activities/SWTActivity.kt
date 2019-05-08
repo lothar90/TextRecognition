@@ -85,6 +85,32 @@ class SWTActivity : BaseActivity() {
             Toast.makeText(this, "No permission to show gallery", Toast.LENGTH_SHORT).show()
     }
 
+    fun onGrayActionButtonClick(view: View) {
+        if (photoLoaded) {
+            var bitmap = originalBitmap.copy(originalBitmap.config, true)
+            if (bitmap.height > 2000 || bitmap.width > 1000)
+                bitmap = Bitmap.createScaledBitmap(
+                    bitmap,
+                    (bitmap.width * 0.25).toInt(),
+                    (bitmap.height * 0.25).toInt(),
+                    false
+                )
+            mRgba = Mat()
+            mGray = Mat()
+            Utils.bitmapToMat(bitmap, mRgba)
+            Imgproc.cvtColor(mRgba, mGray, Imgproc.COLOR_RGB2GRAY)
+            Utils.matToBitmap(mGray, bitmap)
+            galleryImageViewSWT.setImageBitmap(bitmap)
+        } else
+            Toast.makeText(this, "Nie wczytano żadnego zdjęcia", Toast.LENGTH_SHORT).show()
+    }
+
+    fun onCannyEdgeActionButtonClick(view: View) {
+        val milis = System.currentTimeMillis()
+        doCanny()
+        Log.i(TAG, "Detection time:" + (System.currentTimeMillis() - milis))
+    }
+
     fun onPlayActionButtonClick(view: View) {
         var milis = System.currentTimeMillis()
         doCanny()
@@ -125,11 +151,20 @@ class SWTActivity : BaseActivity() {
     }
 
     fun doSWT() {
-        var SWTMat = Mat(mGray.size(), CV_8SC1, Scalar.all(-1.0))
-        var gradX = Mat()
-        var gradY = Mat()
-        var gaussian = Mat()
-        var gray = Mat()
+        var bitmap = originalBitmap.copy(originalBitmap.config, true)
+        if (bitmap.height > 2000 || bitmap.width > 1000)
+            bitmap = Bitmap.createScaledBitmap(
+                bitmap,
+                (bitmap.width * 0.25).toInt(),
+                (bitmap.height * 0.25).toInt(),
+                false
+            )
+        val milis = System.currentTimeMillis()
+        val SWTMat = Mat(mGray.size(), CV_8SC1, Scalar.all(-1.0))
+        val gradX = Mat()
+        val gradY = Mat()
+        val gaussian = Mat()
+        val gray = Mat()
         Imgproc.cvtColor(mRgba, gray, Imgproc.COLOR_RGB2GRAY)
         gray.convertTo(gaussian, CV_32FC1, 1.0 / 255.0)
         GaussianBlur(gaussian, gaussian, Size(5.0, 5.0), 0.0)
@@ -137,16 +172,17 @@ class SWTActivity : BaseActivity() {
         Imgproc.Scharr(gaussian, gradY, CV_64F, 0, 1)
         GaussianBlur(gradX, gradX, Size(3.0, 3.0), 0.0)
         GaussianBlur(gradY, gradY, Size(3.0, 3.0), 0.0)
-        var prec = .05
+        Log.i(TAG, "Gradient search time: " + (System.currentTimeMillis() - milis))
+        val prec = .95
         for (row in 0 until mGray.rows()) {
             for (col in 0 until mGray.cols()) {
-                var r = Ray()
+                val r = Ray()
 
-                var p = SWTPoint2d()
+                val p = SWTPoint2d()
                 p.x = col
                 p.y = row
                 r.p = p
-                var points = ArrayList<SWTPoint2d>()
+                val points = ArrayList<SWTPoint2d>()
                 points.add(p)
 
                 var curX = col.toDouble() + 0.5
@@ -157,8 +193,10 @@ class SWTActivity : BaseActivity() {
                 var G_y = gradY.get(row, col)[0]
 
                 var mag = sqrt((G_x * G_x) + (G_y * G_y))
-                G_x = -G_x / mag
-                G_y = -G_y / mag
+                if (mag == 0.0)
+                    continue
+                G_x = G_x / mag
+                G_y = G_y / mag
 
                 while (true) {
                     curX += G_x * prec
@@ -168,25 +206,26 @@ class SWTActivity : BaseActivity() {
                         curPixY = (floor(curY).toInt())
                         if (curPixX < 0 || (curPixX >= mGray.cols()) || curPixY < 0 || (curPixY >= mGray.rows()))
                             break
-                        var pnew = SWTPoint2d()
+                        val pnew = SWTPoint2d()
                         pnew.x = curPixX
                         pnew.y = curPixY
                         points.add(pnew)
 
                         if (mGray.get(curPixY, curPixX)[0] > 0) {
                             r.q = pnew
-                            var G_xt = gradX.get(curPixY, curPixX)[0]
-                            var G_yt = gradY.get(curPixY, curPixX)[0]
+                            val G_xt = gradX.get(curPixY, curPixX)[0]
+                            val G_yt = gradY.get(curPixY, curPixX)[0]
                             mag = sqrt((G_xt * G_xt) + (G_yt * G_yt))
-                            G_x = -G_x / mag
-                            G_y = -G_y / mag
+                            G_x = G_x / mag
+                            G_y = G_y / mag
                             if (acos(G_x * -G_xt + G_y * -G_yt) < PI / 2.0) {
-                                var length = sqrt(((r.q.x - r.p.x) * (r.q.x - r.p.x) + (r.q.y - r.p.y) * (r.q.y - r.p.y)).toDouble())
+                                val length =
+                                    sqrt(((r.q.x - r.p.x) * (r.q.x - r.p.x) + (r.q.y - r.p.y) * (r.q.y - r.p.y)).toDouble())
                                 for (pit in points) {
                                     if (SWTMat.get(pit.y, pit.x)[0] < 0)
-                                        SWTMat.get(pit.y, pit.x)[0] = length
+                                        SWTMat.put(pit.y, pit.x, length)
                                     else
-                                        SWTMat.get(pit.y, pit.x)[0] = min(length, SWTMat.get(pit.y, pit.x)[0])
+                                        SWTMat.put(pit.y, pit.x, min(length, SWTMat.get(pit.y, pit.x)[0]))
                                 }
                                 r.points = points
                             }
@@ -196,7 +235,9 @@ class SWTActivity : BaseActivity() {
                 }
             }
         }
-        mGray = SWTMat
+        SWTMat.convertTo(mGray, CV_8UC1)
+        Utils.matToBitmap(mGray, bitmap)
+        galleryImageViewSWT.setImageBitmap(bitmap)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
