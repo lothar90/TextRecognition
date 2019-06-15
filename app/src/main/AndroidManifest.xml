@@ -23,19 +23,17 @@
             android:allowBackup="true"
             android:icon="@mipmap/ic_launcher"
             android:label="@string/app_name"
+            android:largeHeap="true"
             android:roundIcon="@mipmap/ic_launcher_round"
             android:supportsRtl="true"
             android:theme="@style/AppTheme"
             tools:ignore="GoogleAppIndexingWarning">
-        <activity android:name=".activities.EASTActivity">
+        <activity android:name=".activities.EASTCameraActivity">
+        </activity>
+        <activity android:name=".activities.MSERCameraActivity">
         </activity>
         <activity
-                android:name=".activities.SWTActivity"
-                android:configChanges="screenLayout|orientation|screenSize"
-                android:label="@string/SWT">
-        </activity>
-        <activity
-                android:name=".activities.MSERActivity"
+                android:name=".activities.MainActivity"
                 android:configChanges="screenLayout|orientation|screenSize"
                 android:label="@string/app_name">
             <intent-filter>
@@ -43,6 +41,21 @@
 
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+        </activity>
+        <activity
+                android:name=".activities.EASTPhotoActivity"
+                android:configChanges="screenLayout|orientation|screenSize"
+                android:label="@string/EAST">
+        </activity>
+        <activity
+                android:name=".activities.SWTActivity"
+                android:configChanges="screenLayout|orientation|screenSize"
+                android:label="@string/SWT">
+        </activity>
+        <activity
+                android:name=".activities.MSERPhotoActivity"
+                android:configChanges="screenLayout|orientation|screenSize"
+                android:label="@string/MSER">
         </activity>
     </application>
 

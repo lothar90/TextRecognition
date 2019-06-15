@@ -17,30 +17,28 @@ import android.widget.Toast
 import com.example.opencvrecognition.R
 import com.example.opencvrecognition.utilities.MSEROperations
 import com.squareup.picasso.Picasso
-import kotlinx.android.synthetic.main.activity_mser.*
+import kotlinx.android.synthetic.main.activity_mser_photo.*
 
 
-class MSERActivity : BaseActivity() {
+class MSERPhotoActivity : BaseActivity() {
 
     private val SELECT_PHOTO = 100
-    private val TAG = "MSERActivity"
+    private val TAG = "MSERPhotoActivity"
     private var photoLoaded = false
     private lateinit var drawerLayout: DrawerLayout
     private lateinit var mserOperations: MSEROperations
     private lateinit var originalBitmap: Bitmap
 
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_mser)
+        setContentView(R.layout.activity_mser_photo)
         setTitle(R.string.MSER)
         mserOperations = MSEROperations()
         Log.d(TAG, "Initialized MSEROperations")
 
-        if (!checkPermission())
-            requestPermission()
-
-        drawerLayout = findViewById(R.id.drawer_layout)
-        val navigationView: NavigationView = findViewById(R.id.navigationView)
+        drawerLayout = findViewById(R.id.mserDrawerLayout)
+        val navigationView: NavigationView = findViewById(R.id.navigationViewMSER)
         navigationView.setNavigationItemSelectedListener { menuItem ->
             // set item as selected to persist highlight
             menuItem.isChecked = true
@@ -48,8 +46,12 @@ class MSERActivity : BaseActivity() {
             drawerLayout.closeDrawers()
 
             when {
+                menuItem.itemId == R.id.main_activity -> {
+                    val intent = Intent(this, MainActivity::class.java)
+                    startActivity(intent)
+                }
                 menuItem.itemId == R.id.mser_activity -> {
-                    val intent = Intent(this, MSERActivity::class.java)
+                    val intent = Intent(this, MSERPhotoActivity::class.java)
                     startActivity(intent)
                 }
                 menuItem.itemId == R.id.swt_activity -> {
@@ -57,7 +59,7 @@ class MSERActivity : BaseActivity() {
                     startActivity(intent)
                 }
                 menuItem.itemId == R.id.east_activity -> {
-                    val intent = Intent(this, EASTActivity::class.java)
+                    val intent = Intent(this, EASTPhotoActivity::class.java)
                     startActivity(intent)
                 }
             }
@@ -73,13 +75,20 @@ class MSERActivity : BaseActivity() {
         }
     }
 
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            android.R.id.home -> {
+                drawerLayout.openDrawer(GravityCompat.START)
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
     fun onGalleryActionButtonClick(view: View) {
-        if (checkPermission()) {
-            val intent = Intent(Intent.ACTION_PICK)
-            intent.type = "image/*"
-            startActivityForResult(Intent.createChooser(intent, "Select Picture"), SELECT_PHOTO)
-        } else
-            Toast.makeText(this, "No permission to show gallery", Toast.LENGTH_SHORT).show()
+        val intent = Intent(Intent.ACTION_PICK)
+        intent.type = "image/*"
+        startActivityForResult(Intent.createChooser(intent, "Select Picture"), SELECT_PHOTO)
     }
 
     fun onMserRegionsActionButtonClick(view: View) {
@@ -187,19 +196,9 @@ class MSERActivity : BaseActivity() {
         if (resultCode == Activity.RESULT_OK)
             if (requestCode == SELECT_PHOTO) {
                 Picasso.get().load(data?.data).noPlaceholder().into(galleryImageViewMSER)
-                originalBitmap = MediaStore.Images.Media.getBitmap(this.contentResolver, data?.data)
+                originalBitmap = MediaStore.Images.Media.getBitmap(contentResolver, data?.data)
                 photoLoaded = true
             }
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId) {
-            android.R.id.home -> {
-                drawerLayout.openDrawer(GravityCompat.START)
-                true
-            }
-            else -> super.onOptionsItemSelected(item)
-        }
     }
 
 }

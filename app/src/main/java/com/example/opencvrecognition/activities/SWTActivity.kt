@@ -55,8 +55,12 @@ class SWTActivity : BaseActivity() {
             drawerLayout.closeDrawers()
 
             when {
+                menuItem.itemId == R.id.main_activity -> {
+                    val intent = Intent(this, MainActivity::class.java)
+                    startActivity(intent)
+                }
                 menuItem.itemId == R.id.mser_activity -> {
-                    val intent = Intent(this, MSERActivity::class.java)
+                    val intent = Intent(this, MSERPhotoActivity::class.java)
                     startActivity(intent)
                 }
                 menuItem.itemId == R.id.swt_activity -> {
@@ -64,7 +68,7 @@ class SWTActivity : BaseActivity() {
                     startActivity(intent)
                 }
                 menuItem.itemId == R.id.east_activity -> {
-                    val intent = Intent(this, EASTActivity::class.java)
+                    val intent = Intent(this, EASTPhotoActivity::class.java)
                     startActivity(intent)
                 }
             }
