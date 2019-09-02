@@ -1,18 +1,21 @@
 package com.example.opencvrecognition.activities
 
+import android.graphics.Bitmap
 import android.os.Bundle
 import android.util.Log
 import android.view.SurfaceView
 import android.view.Window
 import android.view.WindowManager
+import android.widget.Toast
 import com.example.opencvrecognition.R
+import com.example.opencvrecognition.utilities.CNNOCR
 import com.example.opencvrecognition.utilities.MSEROperations
-import org.opencv.android.BaseLoaderCallback
-import org.opencv.android.CameraBridgeViewBase
-import org.opencv.android.LoaderCallbackInterface
-import org.opencv.android.OpenCVLoader
+import com.example.opencvrecognition.utilities.TesseractOCR
+import kotlinx.android.synthetic.main.activity_mser_camera.*
+import org.opencv.android.*
 import org.opencv.core.CvType
 import org.opencv.core.Mat
+import kotlin.concurrent.thread
 
 
 class MSERCameraActivity : BaseActivity(), CameraBridgeViewBase.CvCameraViewListener2 {
@@ -21,6 +24,8 @@ class MSERCameraActivity : BaseActivity(), CameraBridgeViewBase.CvCameraViewList
     private lateinit var mOpenCvCameraView: CameraBridgeViewBase
     private lateinit var mserOperations: MSEROperations
     private var finishedProcessing = true
+    private lateinit var mTessOCR: TesseractOCR
+    private val CNNOperations = CNNOCR()
 
     private val mLoaderCallback = object : BaseLoaderCallback(this) {
         override fun onManagerConnected(status: Int) {
@@ -43,11 +48,17 @@ class MSERCameraActivity : BaseActivity(), CameraBridgeViewBase.CvCameraViewList
 
         setContentView(R.layout.activity_mser_camera)
         mserOperations = MSEROperations()
+        mTessOCR = TesseractOCR()
+        mTessOCR.initialize(this)
 
         mOpenCvCameraView = findViewById(R.id.mserVideoCamera)
-        mOpenCvCameraView.setMaxFrameSize(640, 480)
+        mOpenCvCameraView.setMaxFrameSize(1280, 720)
         mOpenCvCameraView.visibility = SurfaceView.VISIBLE
         mOpenCvCameraView.setCvCameraViewListener(this)
+
+        thread(start = true) {
+            CNNOperations.initialize(this, contentResolver)
+        }
     }
 
     override fun onPause() {
@@ -59,7 +70,7 @@ class MSERCameraActivity : BaseActivity(), CameraBridgeViewBase.CvCameraViewList
         super.onResume()
         if (!OpenCVLoader.initDebug()) {
             Log.d(TAG, "Internal OpenCV library not found. Using OpenCV Manager for initialization")
-            OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_0_0, this, mLoaderCallback)
+            //OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION, this, mLoaderCallback)
         } else {
             Log.d(TAG, "OpenCV library found inside package. Using it!")
             mLoaderCallback.onManagerConnected(LoaderCallbackInterface.SUCCESS)
@@ -82,24 +93,45 @@ class MSERCameraActivity : BaseActivity(), CameraBridgeViewBase.CvCameraViewList
     override fun onCameraFrame(inputFrame: CameraBridgeViewBase.CvCameraViewFrame): Mat {
         mRgba = inputFrame.rgba()
 
-//        var bitmap = originalBitmap.copy(originalBitmap.config, true)
-//        if (bitmap.height > 2000 || bitmap.width > 1000)
-//            bitmap = Bitmap.createScaledBitmap(
-//                bitmap,
-//                (bitmap.width * 0.25).toInt(),
-//                (bitmap.height * 0.25).toInt(),
-//                false
-//            )
         if (finishedProcessing) {
-            finishedProcessing = false
-            mserOperations.initialize()
-            mserOperations.unprocessedMat = mRgba
-            mserOperations.detectTextRegionsVideo()
-            mRgba = mserOperations.mRgba
-            finishedProcessing = true
+            val tempMat = Mat()
+            mRgba.copyTo(tempMat)
+            thread(start = true) {
+                finishedProcessing = false
+                mserOperations.initialize()
+                mserOperations.unprocessedMat = tempMat
+                mserOperations.detectTextRegionsVideo()
+                if (noneRadioButton.isChecked) {
+                    runOnUiThread {
+                        Toast.makeText(this, "Detection completed", Toast.LENGTH_SHORT).show()
+                    }
+                } else if (tesseractRadioButton.isChecked) {
+                    val text = doTesseract(mserOperations.textRegions)
+                    runOnUiThread {
+                        Toast.makeText(this, text, Toast.LENGTH_LONG).show()
+                    }
+                } else if (cnnRadioButton.isChecked) {
+                    CNNOperations.textRegions = mserOperations.textRegions
+                    CNNOperations.doRecognition()
+                }
+                finishedProcessing = true
+            }
         }
-
+        mRgba = mserOperations.showContours(mRgba)
         return mRgba
+    }
+
+    fun doTesseract(regions: ArrayList<Mat>): String {
+        val milis = System.currentTimeMillis()
+        var detectedText = ""
+        for (region in regions.reversed()) {
+            val bitmap =
+                Bitmap.createBitmap(region.width(), region.height(), Bitmap.Config.ARGB_8888)
+            Utils.matToBitmap(region, bitmap)
+            detectedText += mTessOCR.getOCRResult(bitmap) + "\n"
+        }
+        Log.i(TAG, "Recognition time:" + (System.currentTimeMillis() - milis))
+        return detectedText
     }
 
 }

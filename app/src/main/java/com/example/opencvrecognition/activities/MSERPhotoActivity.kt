@@ -15,9 +15,14 @@ import android.view.MenuItem
 import android.view.View
 import android.widget.Toast
 import com.example.opencvrecognition.R
+import com.example.opencvrecognition.utilities.CNNOCR
 import com.example.opencvrecognition.utilities.MSEROperations
+import com.example.opencvrecognition.utilities.TesseractOCR
 import com.squareup.picasso.Picasso
 import kotlinx.android.synthetic.main.activity_mser_photo.*
+import org.opencv.android.Utils
+import org.opencv.core.Mat
+import kotlin.concurrent.thread
 
 
 class MSERPhotoActivity : BaseActivity() {
@@ -28,6 +33,8 @@ class MSERPhotoActivity : BaseActivity() {
     private lateinit var drawerLayout: DrawerLayout
     private lateinit var mserOperations: MSEROperations
     private lateinit var originalBitmap: Bitmap
+    private lateinit var mTessOCR: TesseractOCR
+    private val CNNOperations = CNNOCR()
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -35,6 +42,8 @@ class MSERPhotoActivity : BaseActivity() {
         setContentView(R.layout.activity_mser_photo)
         setTitle(R.string.MSER)
         mserOperations = MSEROperations()
+        mTessOCR = TesseractOCR()
+        mTessOCR.initialize(this)
         Log.d(TAG, "Initialized MSEROperations")
 
         drawerLayout = findViewById(R.id.mserDrawerLayout)
@@ -72,6 +81,9 @@ class MSERPhotoActivity : BaseActivity() {
         actionbar?.apply {
             setDisplayHomeAsUpEnabled(true)
             setHomeAsUpIndicator(R.drawable.ic_menu)
+        }
+        thread(start = true) {
+            CNNOperations.initialize(this, contentResolver)
         }
     }
 
@@ -186,9 +198,31 @@ class MSERPhotoActivity : BaseActivity() {
             mserOperations.bitmap = bitmap
             mserOperations.detectTextRegions()
             galleryImageViewMSER.setImageBitmap(mserOperations.bitmap)
-            Toast.makeText(this, "Detection completed", Toast.LENGTH_SHORT).show()
+            val textRegions = mserOperations.textRegions
+            if (noneRadioButton.isChecked)
+                Toast.makeText(this, "Detection completed", Toast.LENGTH_SHORT).show()
+            else if (tesseractRadioButton.isChecked)
+                doTesseract(textRegions)
+            else if (cnnRadioButton.isChecked) {
+                CNNOperations.textRegions = textRegions
+                CNNOperations.doRecognition()
+            }
+
         } else
             Toast.makeText(this, "First load a photo", Toast.LENGTH_SHORT).show()
+    }
+
+    fun doTesseract(regions: ArrayList<Mat>) {
+        val milis = System.currentTimeMillis()
+        var detectedText = ""
+        for (region in regions.reversed()) {
+            val bitmap =
+                Bitmap.createBitmap(region.width(), region.height(), Bitmap.Config.ARGB_8888)
+            Utils.matToBitmap(region, bitmap)
+            detectedText += mTessOCR.getOCRResult(bitmap) + "\n"
+        }
+        Log.i(TAG, "Recognition time:" + (System.currentTimeMillis() - milis))
+        Toast.makeText(this, detectedText, Toast.LENGTH_LONG).show()
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -200,5 +234,4 @@ class MSERPhotoActivity : BaseActivity() {
                 photoLoaded = true
             }
     }
-
 }

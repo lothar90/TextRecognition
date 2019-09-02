@@ -15,7 +15,9 @@ import android.view.MenuItem
 import android.view.View
 import android.widget.Toast
 import com.example.opencvrecognition.R
+import com.example.opencvrecognition.utilities.CNNOCR
 import com.example.opencvrecognition.utilities.EASTOperations
+import com.example.opencvrecognition.utilities.TesseractOCR
 import com.squareup.picasso.Picasso
 import kotlinx.android.synthetic.main.activity_east_photo.*
 import org.opencv.android.Utils
@@ -34,6 +36,8 @@ class EASTPhotoActivity : BaseActivity() {
     private lateinit var mRgba: Mat
     private var loadedNetwork = false
     private val eastOperations = EASTOperations(this)
+    private val CNNOperations = CNNOCR()
+    private lateinit var mTessOCR: TesseractOCR
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -76,8 +80,12 @@ class EASTPhotoActivity : BaseActivity() {
             setHomeAsUpIndicator(R.drawable.ic_menu)
         }
 
+        mTessOCR = TesseractOCR()
+        mTessOCR.initialize(this)
+
         thread(start = true) {
             eastOperations.initialize()
+            CNNOperations.initialize(this, contentResolver)
             loadedNetwork = true
         }
     }
@@ -107,12 +115,33 @@ class EASTPhotoActivity : BaseActivity() {
             val milis = System.currentTimeMillis()
             eastOperations.mRgba = mRgba
             eastOperations.doEAST()
-            Log.i(TAG, "Detection time:" + (System.currentTimeMillis() - milis))
+            if (noneRadioButton.isChecked) {
+                Log.i(TAG, "Detection time:" + (System.currentTimeMillis() - milis))
+                Toast.makeText(this, "Detection completed", Toast.LENGTH_SHORT).show()
+            } else if (tesseractRadioButton.isChecked)
+                doTesseract(eastOperations.textRegions)
+            else if (cnnRadioButton.isChecked) {
+                CNNOperations.textRegions = eastOperations.textRegions
+                CNNOperations.doRecognition()
+            }
+            //mRgba = eastOperations.showContours(mRgba)
             Utils.matToBitmap(mRgba, bitmap)
             galleryImageViewEAST.setImageBitmap(bitmap)
-            Toast.makeText(this, "Detection completed", Toast.LENGTH_SHORT).show()
         } else
             Toast.makeText(this, "First load a photo", Toast.LENGTH_SHORT).show()
+    }
+
+    fun doTesseract(regions: ArrayList<Mat>) {
+        val milis = System.currentTimeMillis()
+        var detectedText = ""
+        for (region in regions.reversed()) {
+            val bitmap =
+                Bitmap.createBitmap(region.width(), region.height(), Bitmap.Config.ARGB_8888)
+            Utils.matToBitmap(region, bitmap)
+            detectedText += mTessOCR.getOCRResult(bitmap) + "\n"
+        }
+        Log.i(TAG, "Recognition time:" + (System.currentTimeMillis() - milis))
+        Toast.makeText(this, detectedText, Toast.LENGTH_LONG).show()
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

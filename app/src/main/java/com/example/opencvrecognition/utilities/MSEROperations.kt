@@ -9,12 +9,15 @@ import org.opencv.imgproc.Imgproc
 
 
 class MSEROperations {
+    val CONTOUR_COLOR = Scalar(255.0, 0.0, 0.0, 0.0)
     lateinit var unprocessedMat: Mat
     lateinit var mRgba: Mat
     private lateinit var mGray: Mat
     lateinit var bitmap: Bitmap
     private var aspectRatio = 0.0
     private var extent = 0.0
+    var textRegions = ArrayList<Mat>()
+    private var contours = ArrayList<MatOfPoint>()
 
     private val TAG = "MSEROperations"
 
@@ -24,7 +27,6 @@ class MSEROperations {
     }
 
     fun detectMSERRegions() {
-        val CONTOUR_COLOR = Scalar(255.0, 0.0, 0.0, 0.0)
         val listOfRegions = ArrayList<MatOfPoint>()
         val boundingBoxes = MatOfRect()
 
@@ -59,7 +61,6 @@ class MSEROperations {
     }
 
     fun createMSERMask() {
-        val CONTOUR_COLOR = Scalar(255.0, 0.0, 0.0, 0.0)
         val listOfRegions = ArrayList<MatOfPoint>()
         val boundingBoxes = MatOfRect()
 
@@ -97,7 +98,6 @@ class MSEROperations {
     }
 
     fun maskAfterMorphology() {
-        val CONTOUR_COLOR = Scalar(255.0, 0.0, 0.0, 0.0)
         val listOfRegions = ArrayList<MatOfPoint>()
         val boundingBoxes = MatOfRect()
 
@@ -144,7 +144,6 @@ class MSEROperations {
     }
 
     fun drawAllFoundContours() {
-        val CONTOUR_COLOR = Scalar(255.0, 0.0, 0.0, 0.0)
         val listOfRegions = ArrayList<MatOfPoint>()
         val boundingBoxes = MatOfRect()
         val contours = ArrayList<MatOfPoint>()
@@ -205,13 +204,13 @@ class MSEROperations {
     }
 
     fun detectTextRegions() {
-        val CONTOUR_COLOR = Scalar(255.0, 0.0, 0.0, 0.0)
         val listOfRegions = ArrayList<MatOfPoint>()
         val boundingBoxes = MatOfRect()
         val contours = ArrayList<MatOfPoint>()
         val hierarchy = Mat()
         var boundingBox: Rect
         val zeros = Scalar(0.0, 0.0, 0.0)
+        textRegions.clear()
 
         Utils.bitmapToMat(bitmap, mRgba)
         val mask = Mat.zeros(mRgba.size(), CvType.CV_8UC1)
@@ -255,15 +254,20 @@ class MSEROperations {
         Imgproc.findContours(mask, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE)
         Log.i(TAG, "Finding contours time:" + (System.currentTimeMillis() - milis))
 
+        val copy = mRgba.clone()
         milis = System.currentTimeMillis()
         for (i in 0 until contours.size) {
             boundingBox = Imgproc.boundingRect(contours[i])
             if (boundingBox.area() > 100 && boundingBox.width / boundingBox.height > 1.5) {
-                Imgproc.rectangle(mRgba, boundingBox.br(), boundingBox.tl(), CONTOUR_COLOR, 2)
+                val roi = Mat(copy, boundingBox)
+                textRegions.add(roi)
+                Imgproc.rectangle(mRgba, boundingBox.br(), boundingBox.tl(), CONTOUR_COLOR, 1)
                 continue
             }
             if (boundingBox.area() > 100 && boundingBox.height / boundingBox.width > 1.5) {
-                Imgproc.rectangle(mRgba, boundingBox.br(), boundingBox.tl(), CONTOUR_COLOR, 2)
+                val roi = Mat(copy, boundingBox)
+                textRegions.add(roi)
+                Imgproc.rectangle(mRgba, boundingBox.br(), boundingBox.tl(), CONTOUR_COLOR, 1)
                 continue
             }
             val roi = Mat(mask, boundingBox)
@@ -276,14 +280,14 @@ class MSEROperations {
     }
 
     fun detectTextRegionsVideo() {
-        val CONTOUR_COLOR = Scalar(255.0, 0.0, 0.0, 0.0)
         val listOfRegions = ArrayList<MatOfPoint>()
         val boundingBoxes = MatOfRect()
-        val contours = ArrayList<MatOfPoint>()
+        //val contours = ArrayList<MatOfPoint>()
         val hierarchy = Mat()
         var boundingBox: Rect
         val zeros = Scalar(0.0, 0.0, 0.0)
 
+        textRegions.clear()
         mRgba = unprocessedMat
 
         val mask = Mat.zeros(mRgba.size(), CvType.CV_8UC1)
@@ -323,24 +327,58 @@ class MSEROperations {
         )
         Log.i(TAG, "Morpho time:" + (System.currentTimeMillis() - milis))
 
+        var newContours = ArrayList<MatOfPoint>()
         milis = System.currentTimeMillis()
-        Imgproc.findContours(mask, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE)
+        Imgproc.findContours(
+            mask,
+            newContours,
+            hierarchy,
+            Imgproc.RETR_EXTERNAL,
+            Imgproc.CHAIN_APPROX_SIMPLE
+        )
         Log.i(TAG, "Finding contours time:" + (System.currentTimeMillis() - milis))
+        contours = newContours
 
+        val copy = mRgba.clone()
         milis = System.currentTimeMillis()
         for (i in 0 until contours.size) {
             boundingBox = Imgproc.boundingRect(contours[i])
             if (boundingBox.area() > 100 && boundingBox.width / boundingBox.height > 1.5) {
-                Imgproc.rectangle(mRgba, boundingBox.br(), boundingBox.tl(), CONTOUR_COLOR, 2)
+                val roi = Mat(copy, boundingBox)
+                textRegions.add(roi)
+                //Imgproc.rectangle(mRgba, boundingBox.br(), boundingBox.tl(), CONTOUR_COLOR, 1)
                 continue
             }
             if (boundingBox.area() > 100 && boundingBox.height / boundingBox.width > 1.5) {
-                Imgproc.rectangle(mRgba, boundingBox.br(), boundingBox.tl(), CONTOUR_COLOR, 2)
+                val roi = Mat(copy, boundingBox)
+                textRegions.add(roi)
+                //Imgproc.rectangle(mRgba, boundingBox.br(), boundingBox.tl(), CONTOUR_COLOR, 1)
                 continue
             }
             val roi = Mat(mask, boundingBox)
             roi.setTo(zeros)
         }
         Log.i(TAG, "Drawing time:" + (System.currentTimeMillis() - milis))
+    }
+
+    fun showContours(inputMat: Mat): Mat {
+        var actualContours = contours
+        var boundingBox: Rect
+        val milis = System.currentTimeMillis()
+        for (i in 0 until actualContours.size) {
+            boundingBox = Imgproc.boundingRect(actualContours[i])
+            if (boundingBox.area() > 100 && boundingBox.width / boundingBox.height > 1.5) {
+                Imgproc.rectangle(inputMat, boundingBox.br(), boundingBox.tl(), CONTOUR_COLOR, 1)
+                continue
+            }
+            if (boundingBox.area() > 100 && boundingBox.height / boundingBox.width > 1.5) {
+                Imgproc.rectangle(inputMat, boundingBox.br(), boundingBox.tl(), CONTOUR_COLOR, 1)
+                continue
+            }
+            //val roi = Mat(mask, boundingBox)
+            //roi.setTo(zeros)
+        }
+        Log.i(TAG, "Drawing time:" + (System.currentTimeMillis() - milis))
+        return inputMat
     }
 }

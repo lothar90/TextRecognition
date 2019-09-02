@@ -1,6 +1,7 @@
 package com.example.opencvrecognition.utilities
 
 import android.content.Context
+import android.util.Log
 import org.opencv.core.*
 import org.opencv.dnn.Dnn
 import org.opencv.dnn.Net
@@ -8,8 +9,12 @@ import org.opencv.imgproc.Imgproc
 import org.opencv.utils.Converters
 
 class EASTOperations(var context: Context) {
+    private val TAG = "EASTOperations"
+    val CONTOUR_COLOR = Scalar(255.0, 0.0, 0.0, 0.0)
     lateinit var mRgba: Mat
     private lateinit var net: Net
+    var textRegions = ArrayList<Mat>()
+    private var contours = ArrayList<MatOfPoint>()
 
     fun initialize() {
         val inputStream = context.assets.open("frozen_east_text_detection.pb")
@@ -17,6 +22,7 @@ class EASTOperations(var context: Context) {
     }
 
     fun doEAST() {
+        val mask = Mat.zeros(mRgba.size(), CvType.CV_8UC1)
 
         val scoreThresh = 0.5f
         val nmsThresh = 0.4f
@@ -56,9 +62,66 @@ class EASTOperations(var context: Context) {
                     vertices[j]!!.y *= ratio.y
                 }
                 for (j in 0 until 4)
-                    Imgproc.line(mRgba, vertices[j], vertices[(j + 1) % 4], Scalar(255.0, 0.0, 255.0), 2)
+                    Imgproc.line(mRgba, vertices[j], vertices[(j + 1) % 4], CONTOUR_COLOR, 1)
+
+                var newX = (rot.boundingRect().x * ratio.x).toInt()
+                var newY = (rot.boundingRect().y * ratio.y).toInt()
+                var newW = (rot.size.width * ratio.x).toInt()
+                var newH = (rot.size.height * ratio.y).toInt()
+                if (newX < 0) {
+                    newW += newX
+                    newX = 0
+                }
+                if (newY < 0) {
+                    newH += newY
+                    newY = 0
+                }
+                if (newX + newW > mRgba.width())
+                    newW -= (newX + newW - mRgba.width())
+                if (newY + newH > mRgba.height())
+                    newH -= (newY + newH - mRgba.height())
+                val rectangle = Rect(newX, newY, newW, newH)
+                val roi = Mat(mask, rectangle)
+                roi.setTo(CONTOUR_COLOR)
+            }
+            Imgproc.morphologyEx(
+                mask,
+                mask,
+                Imgproc.MORPH_DILATE,
+                Imgproc.getStructuringElement(Imgproc.MORPH_RECT, Size(15.0, 10.0))
+            )
+            textRegions.clear()
+            val hierarchy = Mat()
+            var newContours = ArrayList<MatOfPoint>()
+            var milis = System.currentTimeMillis()
+            Imgproc.findContours(
+                mask,
+                newContours,
+                hierarchy,
+                Imgproc.RETR_EXTERNAL,
+                Imgproc.CHAIN_APPROX_SIMPLE
+            )
+            Log.i(TAG, "Finding contours time:" + (System.currentTimeMillis() - milis))
+            contours = newContours
+            val copy = mRgba.clone()
+            for (i in 0 until contours.size) {
+                val boundingBox = Imgproc.boundingRect(contours[i])
+                val roi = Mat(copy, boundingBox)
+                textRegions.add(roi)
             }
         }
+    }
+
+    fun showContours(inputMat: Mat): Mat {
+        var actualContours = contours
+        var boundingBox: Rect
+        val milis = System.currentTimeMillis()
+        for (i in 0 until actualContours.size) {
+            boundingBox = Imgproc.boundingRect(actualContours[i])
+            Imgproc.rectangle(inputMat, boundingBox.br(), boundingBox.tl(), CONTOUR_COLOR, 1)
+        }
+        Log.i(TAG, "Drawing time:" + (System.currentTimeMillis() - milis))
+        return inputMat
     }
 
     private fun decode(
